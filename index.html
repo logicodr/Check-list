@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Packing Checklist - Paris & Barcelona</title>
+    <meta name="description" content="Interactive travel packing checklist with progress tracking and localStorage persistence. Perfect for Paris and Barcelona trips.">
+    <meta name="author" content="Travel Checklist Generator">
+    <!-- GitHub Pages friendly -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 0;
+        }
+        
+        .section {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-header {
+            background: #f8fafc;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-content {
+            padding: 20px 30px;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s ease;
+        }
+        
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checklist-item:hover {
+            background-color: #f8fafc;
+            padding-left: 10px;
+        }
+        
+        .checklist-item.checked {
+            opacity: 0.6;
+        }
+        
+        .checklist-item.checked .item-text {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            cursor: pointer;
+            accent-color: #4f46e5;
+        }
+        
+        .item-text {
+            flex: 1;
+            font-size: 1em;
+            color: #334155;
+            transition: all 0.2s ease;
+        }
+        
+        .divider {
+            text-align: center;
+            padding: 10px;
+            color: #94a3b8;
+            font-size: 1.2em;
+        }
+        
+        .progress-bar {
+            background: #e2e8f0;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 20px 30px;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin: 10px 30px 20px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            .header, .section-content {
+                padding: 20px;
+            }
+            
+            .section-header {
+                padding: 15px 20px;
+            }
+            
+            .progress-bar, .progress-text {
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧳 Travel Packing Checklist</h1>
+            <p>Paris & Barcelona Adventure</p>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">0% Complete (0 of 47 items)</div>
+        
+        <div style="text-align: center; padding: 10px 30px; border-bottom: 1px solid #f0f0f0;">
+            <button onclick="clearChecklistState()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                🗑️ Reset All Items
+            </button>
+            <div style="font-size: 0.8em; color: #64748b; margin-top: 5px;">
+                Or press Ctrl+Shift+C (Cmd+Shift+C on Mac)
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <div class="section-header">
+                    🧳 ESSENTIALS
+                </div>
+                <div class="section-content">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="passport">
+                        <label for="passport" class="item-text">Passport / ID</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="wallet">
+                        <label for="wallet" class="item-text">Wallet (cards + cash)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="phone">
+                        <label for="phone" class="item-text">Phone</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="phone-charger">
+                        <label for="phone-charger" class="item-text">Phone charger</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="power-bank">
+                        <label for="power-bank" class="item-text">Power bank (carry-on safe)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="eu-adapter">
+                        <label for="eu-adapter" class="item-text">EU plug adapter</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="sunglasses">
+                        <label for="sunglasses" class="item-text">Sunglasses</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="headphones">
+                        <label for="headphones" class="item-text">Headphones / AirPods</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="crossbody-bag">
+                        <label for="crossbody-bag" class="item-text">Crossbody bag or city backpack</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="travel-docs">
+                        <label for="travel-docs" class="item-text">Travel documents (flight, hotel, etc.)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    💻 WORK GEAR
+                </div>
+                <div class="section-content">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="laptop">
+                        <label for="laptop" class="item-text">Laptop</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="laptop-charger">
+                        <label for="laptop-charger" class="item-text">Laptop charger</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    👕 CLOTHING (rolled tight or use packing cube)
+                </div>
+                <div class="section-content">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="tshirts">
+                        <label for="tshirts" class="item-text">3x T-shirts or polos</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="button-shirt">
+                        <label for="button-shirt" class="item-text">1x button shirt (for evening)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="hoodie">
+                        <label for="hoodie" class="item-text">1x hoodie or light jacket</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="jeans">
+                        <label for="jeans" class="item-text">1x jeans or chinos</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="shorts">
+                        <label for="shorts" class="item-text">1x shorts</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="underwear">
+                        <label for="underwear" class="item-text">3x underwear</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="socks">
+                        <label for="socks" class="item-text">3x socks</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="belt">
+                        <label for="belt" class="item-text">1x belt</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="swim-shorts">
+                        <label for="swim-shorts" class="item-text">1x swim shorts (Barcelona beach, optional)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="sneakers">
+                        <label for="sneakers" class="item-text">1x sneakers (wear these)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="sandals">
+                        <label for="sandals" class="item-text">Optional: sandals (if space)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    🧼 TOILETRIES (all max 100 mL, in 1L transparent zip bag)
+                </div>
+                <div class="section-content">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="toothbrush">
+                        <label for="toothbrush" class="item-text">Toothbrush</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="toothpaste">
+                        <label for="toothpaste" class="item-text">Travel toothpaste</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="face-wash">
+                        <label for="face-wash" class="item-text">Face wash</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="moisturizer">
+                        <label for="moisturizer" class="item-text">Moisturizer</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="deodorant">
+                        <label for="deodorant" class="item-text">Deodorant (solid preferred)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="cologne">
+                        <label for="cologne" class="item-text">Cologne (small spray)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="lip-balm">
+                        <label for="lip-balm" class="item-text">Lip balm</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="razor">
+                        <label for="razor" class="item-text">Travel razor (disposable OK)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="comb">
+                        <label for="comb" class="item-text">Comb / brush</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="sunscreen">
+                        <label for="sunscreen" class="item-text">Sunscreen (mini)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    🔌 ELECTRONICS
+                </div>
+                <div class="section-content">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="phone-charger-2">
+                        <label for="phone-charger-2" class="item-text">Phone charger</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="power-bank-2">
+                        <label for="power-bank-2" class="item-text">Power bank</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="eu-adapter-2">
+                        <label for="eu-adapter-2" class="item-text">EU adapter</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="kindle">
+                        <label for="kindle" class="item-text">Optional: Kindle or iPad</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    🧠 EXTRAS
+                </div>
+                <div class="section-content">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="painkillers">
+                        <label for="painkillers" class="item-text">Painkillers / meds</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="water-bottle">
+                        <label for="water-bottle" class="item-text">Reusable water bottle (empty at airport)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="snack">
+                        <label for="snack" class="item-text">Snack or protein bar</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="pen">
+                        <label for="pen" class="item-text">Pen</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="umbrella">
+                        <label for="umbrella" class="item-text">Mini umbrella (for Paris)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="tote-bag">
+                        <label for="tote-bag" class="item-text">Light tote bag (shopping/beach)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    📍 TRAVEL REMINDERS
+                </div>
+                <div class="section-content">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-tickets">
+                        <label for="check-tickets" class="item-text">Check all flight tickets, bus tickets, and confirmations</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="save-backups">
+                        <label for="save-backups" class="item-text">Save digital + printed backups</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="plan-transport">
+                        <label for="plan-transport" class="item-text">Plan how to get from airport/station to hotel</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="hotel-info">
+                        <label for="hotel-info" class="item-text">Save hotel address + entry info (photo/notes)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-times">
+                        <label for="check-times" class="item-text">Double-check check-in / check-out times</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-weather">
+                        <label for="check-weather" class="item-text">Check weather in Paris and Barcelona</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cache key for localStorage
+        const CACHE_KEY = 'packing-checklist-state';
+        
+        function saveChecklistState() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const state = {};
+            
+            checkboxes.forEach(checkbox => {
+                state[checkbox.id] = checkbox.checked;
+            });
+            
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.log('localStorage not available - state will not persist');
+            }
+        }
+        
+        function loadChecklistState() {
+            try {
+                const savedState = localStorage.getItem(CACHE_KEY);
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    
+                    Object.entries(state).forEach(([checkboxId, isChecked]) => {
+                        const checkbox = document.getElementById(checkboxId);
+                        if (checkbox) {
+                            checkbox.checked = isChecked;
+                            const item = checkbox.closest('.checklist-item');
+                            if (isChecked) {
+                                item.classList.add('checked');
+                            } else {
+                                item.classList.remove('checked');
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log('Could not load saved state');
+            }
+        }
+        
+        function clearChecklistState() {
+            try {
+                localStorage.removeItem(CACHE_KEY);
+                location.reload();
+            } catch (e) {
+                console.log('Could not clear saved state');
+            }
+        }
+
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const totalItems = checkboxes.length;
+            const checkedItems = document.querySelectorAll('input[type="checkbox"]:checked').length;
+            const percentage = Math.round((checkedItems / totalItems) * 100);
+            
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${percentage}% Complete (${checkedItems} of ${totalItems} items)`;
+        }
+
+        function setupCheckboxes() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const item = this.closest('.checklist-item');
+                    if (this.checked) {
+                        item.classList.add('checked');
+                    } else {
+                        item.classList.remove('checked');
+                    }
+                    updateProgress();
+                    saveChecklistState();
+                });
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCheckboxes();
+            loadChecklistState();
+            updateProgress();
+        });
+        
+        // Add keyboard shortcut to clear all items (Ctrl/Cmd + R + C)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+                if (confirm('Clear all checked items? This will reset your entire checklist.')) {
+                    clearChecklistState();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
