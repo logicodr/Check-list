@@ -6,7 +6,6 @@
     <title>Packliste - Paris & Barcelona</title>
     <meta name="description" content="Interaktive Reise-Packliste mit Fortschrittsanzeige">
     <meta name="theme-color" content="#1e293b">
-    <link rel="manifest" href="data:application/json,{}">
     <style>
         * {
             margin: 0;
@@ -89,7 +88,7 @@
             color: #22c55e;
         }
 
-        /* Reset Button */
+        /* Buttons */
         .reset-btn {
             background: #dc2626;
             color: white;
@@ -109,12 +108,16 @@
 
         /* Content */
         .content {
-            padding-bottom: 40px;
+            padding-bottom: 20px;
         }
 
         /* Section */
         .section {
             border-bottom: 1px solid #334155;
+        }
+
+        .section:empty {
+            display: none;
         }
 
         .section-header {
@@ -137,11 +140,19 @@
             font-size: 1rem;
         }
 
+        .section-header .count {
+            margin-left: auto;
+            background: #334155;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+        }
+
         .section-content {
             background: #0f172a;
         }
 
-        /* Checklist Item - grosse Touch-Targets */
+        /* Checklist Item */
         .item {
             display: flex;
             align-items: center;
@@ -149,8 +160,9 @@
             border-bottom: 1px solid #1e293b;
             cursor: pointer;
             touch-action: manipulation;
-            transition: background 0.15s ease;
+            transition: all 0.2s ease;
             min-height: 56px;
+            overflow: hidden;
         }
 
         .item:last-child {
@@ -161,13 +173,15 @@
             background: #1e293b;
         }
 
-        .item.checked {
-            opacity: 0.5;
-        }
-
-        .item.checked .item-text {
-            text-decoration: line-through;
-            color: #64748b;
+        /* Animation für checked items */
+        .item.hiding {
+            opacity: 0;
+            transform: translateX(100%);
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            min-height: 0;
+            border-bottom: none;
         }
 
         /* Custom Checkbox */
@@ -211,11 +225,92 @@
             color: #e2e8f0;
         }
 
-        /* Hidden real checkbox */
         .item input[type="checkbox"] {
             position: absolute;
             opacity: 0;
             pointer-events: none;
+        }
+
+        /* Erledigt Section */
+        .done-section {
+            border-top: 1px solid #334155;
+            margin-top: 20px;
+        }
+
+        .done-header {
+            background: #1e293b;
+            padding: 14px 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #22c55e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .done-header .count {
+            margin-left: auto;
+            background: #166534;
+            color: #bbf7d0;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+        }
+
+        .done-header .chevron {
+            transition: transform 0.2s ease;
+        }
+
+        .done-header.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+
+        .done-content {
+            background: #0f172a;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .done-content.collapsed {
+            max-height: 0 !important;
+        }
+
+        .done-content .item {
+            opacity: 0.5;
+        }
+
+        .done-content .item .item-text {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h2 {
+            font-size: 1.25rem;
+            color: #22c55e;
+            margin-bottom: 8px;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #334155;
         }
 
         /* Desktop */
@@ -256,13 +351,6 @@
                 background: #1e293b;
             }
         }
-
-        /* PWA Install Banner verstecken */
-        @media (display-mode: standalone) {
-            .header p {
-                display: none;
-            }
-        }
     </style>
 </head>
 <body>
@@ -277,20 +365,31 @@
                 <div class="progress-fill" id="progressFill"></div>
             </div>
             <div class="progress-text">
-                <span><span id="checkedCount">0</span> von <span id="totalCount">0</span></span>
+                <span>Noch <strong id="remainingCount">0</strong> offen</span>
                 <span class="progress-percent" id="progressPercent">0%</span>
             </div>
         </div>
 
         <div class="content" id="checklistContent"></div>
 
-        <div style="padding: 20px; text-align: center;">
+        <div class="done-section" id="doneSection" style="display: none;">
+            <div class="done-header" id="doneHeader" onclick="toggleDoneSection()">
+                <span>✓ Erledigt</span>
+                <span class="count" id="doneCount">0</span>
+                <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+            <div class="done-content" id="doneContent"></div>
+        </div>
+
+        <div class="footer">
             <button class="reset-btn" onclick="resetAll()">Alles zurücksetzen</button>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'packliste-v2';
+        const STORAGE_KEY = 'packliste-v3';
 
         const checklistData = [
             {
@@ -378,101 +477,167 @@
             }
         ];
 
+        let state = {};
+        let doneCollapsed = false;
+
         function generateId(sectionIndex, itemIndex) {
             return `item-${sectionIndex}-${itemIndex}`;
         }
 
+        function getItemInfo(id) {
+            const [, sectionIndex, itemIndex] = id.match(/item-(\d+)-(\d+)/);
+            const section = checklistData[parseInt(sectionIndex)];
+            const item = section.items[parseInt(itemIndex)];
+            return { section, item, sectionIndex: parseInt(sectionIndex), itemIndex: parseInt(itemIndex) };
+        }
+
+        function createItemHTML(id, itemText, isChecked) {
+            return `
+                <label class="item ${isChecked ? 'checked' : ''}" data-id="${id}">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''}>
+                    <div class="checkbox">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <span class="item-text">${itemText}</span>
+                </label>
+            `;
+        }
+
         function renderChecklist() {
             const content = document.getElementById('checklistContent');
-            const savedState = loadState();
+            const doneContent = document.getElementById('doneContent');
+            const doneSection = document.getElementById('doneSection');
 
-            let html = '';
-            let totalItems = 0;
+            let openHTML = '';
+            let doneHTML = '';
+            let openCount = 0;
+            let doneCount = 0;
+
+            // Group items by section for open items
+            const openBySection = {};
+            const doneItems = [];
 
             checklistData.forEach((section, sectionIndex) => {
-                html += `
+                openBySection[sectionIndex] = [];
+
+                section.items.forEach((item, itemIndex) => {
+                    const id = generateId(sectionIndex, itemIndex);
+                    const isChecked = state[id] || false;
+
+                    if (isChecked) {
+                        doneItems.push({ id, item, sectionIndex });
+                        doneCount++;
+                    } else {
+                        openBySection[sectionIndex].push({ id, item });
+                        openCount++;
+                    }
+                });
+            });
+
+            // Render open sections
+            checklistData.forEach((section, sectionIndex) => {
+                const items = openBySection[sectionIndex];
+                if (items.length === 0) return;
+
+                openHTML += `
                     <div class="section">
                         <div class="section-header">
                             <span class="icon">${section.icon}</span>
                             ${section.title}
+                            <span class="count">${items.length}</span>
                         </div>
                         <div class="section-content">
                 `;
 
-                section.items.forEach((item, itemIndex) => {
-                    const id = generateId(sectionIndex, itemIndex);
-                    const isChecked = savedState[id] || false;
-                    totalItems++;
-
-                    html += `
-                        <label class="item ${isChecked ? 'checked' : ''}" data-id="${id}">
-                            <input type="checkbox" ${isChecked ? 'checked' : ''}>
-                            <div class="checkbox">
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </div>
-                            <span class="item-text">${item}</span>
-                        </label>
-                    `;
+                items.forEach(({ id, item }) => {
+                    openHTML += createItemHTML(id, item, false);
                 });
 
-                html += `
+                openHTML += `
                         </div>
                     </div>
                 `;
             });
 
-            content.innerHTML = html;
-            document.getElementById('totalCount').textContent = totalItems;
+            // Show empty state if all done
+            if (openCount === 0) {
+                openHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🎉</div>
+                        <h2>Alles gepackt!</h2>
+                        <p>Du hast nichts vergessen. Gute Reise!</p>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = openHTML;
+
+            // Render done items
+            if (doneCount > 0) {
+                doneSection.style.display = 'block';
+                doneHTML = doneItems.map(({ id, item }) => createItemHTML(id, item, true)).join('');
+                doneContent.innerHTML = doneHTML;
+                document.getElementById('doneCount').textContent = doneCount;
+            } else {
+                doneSection.style.display = 'none';
+            }
 
             // Event listeners
             document.querySelectorAll('.item').forEach(item => {
                 item.addEventListener('click', handleItemClick);
             });
 
-            updateProgress();
+            updateProgress(openCount, doneCount);
         }
 
         function handleItemClick(e) {
+            e.preventDefault();
             const item = e.currentTarget;
+            const id = item.dataset.id;
             const checkbox = item.querySelector('input[type="checkbox"]');
+            const wasChecked = checkbox.checked;
 
-            // Toggle
-            checkbox.checked = !checkbox.checked;
-            item.classList.toggle('checked', checkbox.checked);
-
+            // Toggle state
+            state[id] = !wasChecked;
             saveState();
-            updateProgress();
+
+            // Animate out
+            item.classList.add('hiding');
+
+            // Re-render after animation
+            setTimeout(() => {
+                renderChecklist();
+            }, 200);
         }
 
-        function updateProgress() {
-            const checkboxes = document.querySelectorAll('.item input[type="checkbox"]');
-            const total = checkboxes.length;
-            const checked = document.querySelectorAll('.item input[type="checkbox"]:checked').length;
-            const percent = total > 0 ? Math.round((checked / total) * 100) : 0;
+        function toggleDoneSection() {
+            const header = document.getElementById('doneHeader');
+            const content = document.getElementById('doneContent');
 
-            document.getElementById('checkedCount').textContent = checked;
-            document.getElementById('progressFill').style.width = percent + '%';
-            document.getElementById('progressPercent').textContent = percent + '%';
+            doneCollapsed = !doneCollapsed;
 
-            // Farbe ändern bei 100%
-            const fill = document.getElementById('progressFill');
-            if (percent === 100) {
-                fill.style.background = 'linear-gradient(90deg, #22c55e, #10b981)';
+            if (doneCollapsed) {
+                header.classList.add('collapsed');
+                content.classList.add('collapsed');
             } else {
-                fill.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+                header.classList.remove('collapsed');
+                content.classList.remove('collapsed');
+                content.style.maxHeight = content.scrollHeight + 'px';
             }
         }
 
-        function saveState() {
-            const state = {};
-            document.querySelectorAll('.item').forEach(item => {
-                const id = item.dataset.id;
-                const checkbox = item.querySelector('input[type="checkbox"]');
-                state[id] = checkbox.checked;
-            });
+        function updateProgress(open, done) {
+            const total = open + done;
+            const percent = total > 0 ? Math.round((done / total) * 100) : 0;
 
+            document.getElementById('remainingCount').textContent = open;
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+        }
+
+        function saveState() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             } catch (e) {
@@ -491,6 +656,7 @@
 
         function resetAll() {
             if (confirm('Wirklich alles zurücksetzen?')) {
+                state = {};
                 try {
                     localStorage.removeItem(STORAGE_KEY);
                 } catch (e) {}
@@ -507,6 +673,7 @@
         });
 
         // Init
+        state = loadState();
         renderChecklist();
     </script>
 </body>
